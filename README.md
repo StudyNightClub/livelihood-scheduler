@@ -6,7 +6,9 @@ Perform schedued jobs.
 * requests 2.17
 * schedule 0.4.3
 
+```
     $ pip install -r requirements.txt
+```
 
 ## Usage
 
