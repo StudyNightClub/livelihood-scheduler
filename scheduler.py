@@ -23,11 +23,8 @@ def main():
 
 def refresh_schedule():
 
-    schedule.clear('refresh')
-    schedule.every().day.at('03:00').do(refresh_schedule)
-
-    # update DB
-
+    schedule.clear()
+    schedule.every(5).minutes.do(refresh_schedule)
 
     # for every user
     for u in get_all_user_config():
