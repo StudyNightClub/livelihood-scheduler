@@ -1,4 +1,4 @@
-# livelihood-scheduler v1.0.0
+# livelihood-scheduler v1.1.0
 Perform schedued jobs.
 
 ## Requirements
