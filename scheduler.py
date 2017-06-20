@@ -21,32 +21,34 @@ def main():
     logging.basicConfig(filename='scheduler.log', level=logging.INFO)
     send_to_slack('Starting scheduler...')
     refresh_schedule()
+    schedule.every(10).seconds.do(refresh_schedule)
+    schedule.every(5).minutes.do(heartbeat)
     while True:
         schedule.run_pending()
         time.sleep(5)
 
 
 def refresh_schedule():
+    try:
+        schedule.clear('user')
+        # for every user
+        for u in get_all_user_config():
+            system_time = get_system_nofity_time(u['undisturbed_start'], u['undisturbed_end'])
+            # is location set
+            if u['latitude']:
+                # add user schdule
+                user_schedule = get_user_time(u)
+                if user_schedule:
+                    schedule.every().day.at(user_schedule).do(notify, u['id'], 'user').tag('user')
+                # add system schedule
+                schedule.every().day.at(system_time).do(notify, u['id'], 'system').tag('user')
+            else:
+                schedule.every().wednesday.at(system_time).do(broadcast, u['id']).tag('user')
+                schedule.every().saturday.at(system_time).do(broadcast, u['id']).tag('user')
 
-    schedule.clear()
-    schedule.every(5).minutes.do(refresh_schedule)
-
-    # for every user
-    for u in get_all_user_config():
-        system_time = get_system_nofity_time(u['undisturbed_start'], u['undisturbed_end'])
-        # is location set
-        if u['latitude']:
-            # add user schdule
-            user_schedule = get_user_time(u)
-            if user_schedule:
-                schedule.every().day.at(user_schedule).do(notify, u['id'], 'user')
-            # add system schedule
-            schedule.every().day.at(system_time).do(notify, u['id'], 'system')
-        else:
-            schedule.every().wednesday.at(system_time).do(broadcast, u['id'])
-            schedule.every().saturday.at(system_time).do(broadcast, u['id'])
-
-    logging.info(schedule.default_scheduler.jobs)
+        logging.info(schedule.default_scheduler.jobs)
+    except Exception as e:
+        logging.fatal(e)
 
 
 def notify(uid, category):
@@ -114,6 +116,9 @@ def get_user_time(user):
         logging.error('Illegal active notify time format: {}'.format(t))
         send_to_slack('*Illegal active notify time format: {}*'.format(t))
         return None
+
+def heartbeat():
+    send_to_slack('The scheduler is still alive')
 
 
 if __name__ == '__main__':
