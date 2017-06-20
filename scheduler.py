@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 import requests
 import schedule
 
+from slack import send_to_slack
 
 NOTIFY_TIME = '17:00'
 TIME_FORMAT = '%H:%M'
@@ -17,7 +18,8 @@ engine = os.environ['ENGINE_URL']
 
 
 def main():
-    logging.basicConfig(filename='scheduler.log', level=logging.DEBUG)
+    logging.basicConfig(filename='scheduler.log', level=logging.INFO)
+    send_to_slack('Starting scheduler...')
     refresh_schedule()
     while True:
         schedule.run_pending()
@@ -51,6 +53,7 @@ def notify(uid, category):
     user_scheduled = 1 if category == 'user' else 0
     url = urljoin(engine, '/notify_interest/{}?user_scheduled={}'.format(uid, user_scheduled))
     logging.info('POST ' + url)
+    send_to_slack('Notifying user {}\n> POST {}'.format(uid, url))
     requests.post(url)
 
 
@@ -58,6 +61,7 @@ def broadcast(uid):
     config = get_user_config()
     url = urljoin(engine, '/notify_all/{}'.format(uid))
     logging.info('POST ' + url)
+    send_to_slack('Broadcasting to user {}\n> POST {}'.format(uid, url))
     requests.post(url)
 
 
@@ -92,6 +96,7 @@ def get_all_user_config():
             yield config
         else:
             logging.error('Unable to get user config for ' + user)
+            send_to_slack('*Unable to get user config for ' + user + '*')
 
 
 def get_user_config(uid):
@@ -107,6 +112,7 @@ def get_user_time(user):
         return t
     except ValueError:
         logging.error('Illegal active notify time format: {}'.format(t))
+        send_to_slack('*Illegal active notify time format: {}*'.format(t))
         return None
 
 
