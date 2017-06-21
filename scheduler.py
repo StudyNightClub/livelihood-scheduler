@@ -21,8 +21,8 @@ def main():
     logging.basicConfig(filename='scheduler.log', level=logging.INFO)
     send_to_slack('Starting scheduler...')
     refresh_schedule()
-    schedule.every(10).seconds.do(refresh_schedule)
-    schedule.every(5).minutes.do(heartbeat)
+    schedule.every(30).seconds.do(refresh_schedule)
+    schedule.every(60).minutes.do(heartbeat)
     while True:
         schedule.run_pending()
         time.sleep(5)
@@ -60,7 +60,7 @@ def notify(uid, category):
 
 
 def broadcast(uid):
-    config = get_user_config()
+    config = get_user_config(uid)
     url = urljoin(engine, '/notify_all/{}'.format(uid))
     logging.info('POST ' + url)
     send_to_slack('Broadcasting to user {}\n> POST {}'.format(uid, url))

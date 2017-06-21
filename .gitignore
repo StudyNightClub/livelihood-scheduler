@@ -102,3 +102,4 @@ ENV/
 
 setup_env.sh
 *.swp
+*~
