@@ -52,7 +52,7 @@ def notify(uid, category):
     url = urljoin(engine, '/notify_interest/{}?user_scheduled={}'.format(uid, user_scheduled))
     logging.info('POST ' + url)
     send_to_slack('Notifying user {}\n> POST {}'.format(uid, url))
-    requests.post(url)
+    requests.post(url, timeout=30)
 
 
 def broadcast(uid):
@@ -60,13 +60,13 @@ def broadcast(uid):
     url = urljoin(engine, '/notify_all/{}'.format(uid))
     logging.info('POST ' + url)
     send_to_slack('Broadcasting to user {}\n> POST {}'.format(uid, url))
-    requests.post(url)
+    requests.post(url, timeout=30)
 
 
 def get_all_user_config():
     query_ids = urljoin(user_api, '/user/0?userToken=') + user_token
     logging.info(query_ids)
-    all_users = requests.get(query_ids).json()
+    all_users = requests.get(query_ids, timeout=30).json()
     logging.info(all_users)
     for user in all_users:
         config = get_user_config(user)
@@ -80,7 +80,7 @@ def get_all_user_config():
 def get_user_config(uid):
     query_config = urljoin(user_api, '/user/{}?userToken='.format(uid)) + user_token
     logging.info(query_config)
-    return requests.get(query_config).json()
+    return requests.get(query_config, timeout=30).json()
 
 
 def get_user_time(user):
