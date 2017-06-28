@@ -19,9 +19,8 @@ engine = os.environ['ENGINE_URL']
 
 def main():
     logging.basicConfig(filename='scheduler.log', level=logging.INFO)
-    send_to_slack('Starting scheduler...')
     refresh_schedule()
-    schedule.every(30).seconds.do(refresh_schedule)
+    schedule.every(1).minutes.do(refresh_schedule)
     schedule.every(60).minutes.do(heartbeat)
     while True:
         schedule.run_pending()
@@ -40,8 +39,6 @@ def refresh_schedule():
                 user_schedule = get_user_time(u)
                 if user_schedule:
                     schedule.every().day.at(user_schedule).do(notify, u['id'], 'user').tag('user')
-                # add system schedule
-                schedule.every().day.at(system_time).do(notify, u['id'], 'system').tag('user')
             else:
                 schedule.every().wednesday.at(system_time).do(broadcast, u['id']).tag('user')
                 schedule.every().saturday.at(system_time).do(broadcast, u['id']).tag('user')
