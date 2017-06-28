@@ -19,9 +19,8 @@ engine = os.environ['ENGINE_URL']
 
 def main():
     logging.basicConfig(filename='scheduler.log', level=logging.INFO)
-    send_to_slack('Starting scheduler...')
     refresh_schedule()
-    schedule.every(30).seconds.do(refresh_schedule)
+    schedule.every(1).minutes.do(refresh_schedule)
     schedule.every(60).minutes.do(heartbeat)
     while True:
         schedule.run_pending()
@@ -33,15 +32,12 @@ def refresh_schedule():
         schedule.clear('user')
         # for every user
         for u in get_all_user_config():
-            system_time = get_system_nofity_time(u['undisturbed_start'], u['undisturbed_end'])
             # is location set
             if u['latitude']:
                 # add user schdule
                 user_schedule = get_user_time(u)
                 if user_schedule:
                     schedule.every().day.at(user_schedule).do(notify, u['id'], 'user').tag('user')
-                # add system schedule
-                schedule.every().day.at(system_time).do(notify, u['id'], 'system').tag('user')
             else:
                 schedule.every().wednesday.at(system_time).do(broadcast, u['id']).tag('user')
                 schedule.every().saturday.at(system_time).do(broadcast, u['id']).tag('user')
@@ -65,26 +61,6 @@ def broadcast(uid):
     logging.info('POST ' + url)
     send_to_slack('Broadcasting to user {}\n> POST {}'.format(uid, url))
     requests.post(url)
-
-
-def get_system_nofity_time(start, end):
-    if not start or not end:
-        return NOTIFY_TIME
-
-    system = datetime.strptime(NOTIFY_TIME, TIME_FORMAT)
-    try:
-        start = datetime.strptime(start, TIME_FORMAT)
-        end = datetime.strptime(end, TIME_FORMAT)
-    except ValueError as e:
-        logging.warn('Unable to parse time: {}'.format(e))
-        return NOTIFY_TIME
-
-    if start < end:
-        between = start < system and system < end
-    else:
-        between = system > start or system < end
-    result = system if not between else start
-    return result.strftime(TIME_FORMAT)
 
 
 def get_all_user_config():
@@ -116,6 +92,7 @@ def get_user_time(user):
         logging.error('Illegal active notify time format: {}'.format(t))
         send_to_slack('*Illegal active notify time format: {}*'.format(t))
         return None
+
 
 def heartbeat():
     send_to_slack('The scheduler is still alive')
